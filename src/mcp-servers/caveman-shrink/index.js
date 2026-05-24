@@ -76,7 +76,6 @@ function transformResponse(msg) {
   // detect by the presence of a tools/prompts/resources array.
   if (!msg || !msg.result || typeof msg.result !== 'object') return msg;
   const r = msg.result;
-  let compressedSomething = false;
 
   for (const arrayName of ['tools', 'prompts', 'resources', 'resourceTemplates']) {
     if (Array.isArray(r[arrayName])) {
@@ -87,7 +86,6 @@ function transformResponse(msg) {
             const out = compress(before).compressed;
             if (out !== before) {
               item[field] = out;
-              compressedSomething = true;
               if (debug) {
                 process.stderr.write(
                   `[caveman-shrink] ${arrayName}.${item.name || '?'}.${field}: ` +
@@ -101,9 +99,9 @@ function transformResponse(msg) {
     }
   }
 
-  // Some servers stuff descriptions in nested schemas. Only walk if nothing
-  // matched at the top level; avoids double-processing a tool's nested params.
-  if (!compressedSomething) compressDescriptionsInPlace(r, fields);
+  // Walk nested schemas to compress parameter-level descriptions too.
+  // compress() is idempotent, so already-compressed fields are harmless.
+  compressDescriptionsInPlace(r, fields);
 
   return msg;
 }

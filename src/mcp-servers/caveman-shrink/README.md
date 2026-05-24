@@ -36,11 +36,14 @@ The proxy spawns the upstream as a subprocess, intercepts `tools/list`, `prompts
 
 ## What it does NOT touch
 
-By design, v1 is conservative:
-
 - **Request bodies** going to the upstream are passed through unchanged.
 - **Tool call responses** (`tools/call`) are passed through unchanged. We don't want to risk silently mutating the data the upstream returns to the model.
 - **Identifiers, URLs, paths, and code-looking tokens** inside any prose are preserved exactly. Same boundaries as the parent caveman skill.
+
+## What it DOES touch
+
+- **Tool descriptions** (`tools[i].description`) — compressed in-place.
+- **Parameter/field descriptions** nested inside `inputSchema` and similar schemas — recursively compressed. `compress()` is idempotent, so repeated passes over already-compressed fields are harmless.
 
 ## Configuration
 
